@@ -449,7 +449,7 @@ with poster_tab:
         "corpus": corpus,
         "pillar": pillar,
         "conclusions": conclusions,
-        "limitations": limitations,
+        "limitations": """La muestra de evaluación es reducida; la fidelidad normativa requiere revisión humana; el sistema depende de servicios cloud y cuotas de API; un score alto no garantiza por sí solo una respuesta correcta.""",,
         "github": github,
         "app_url": app_url,
         "video": video,

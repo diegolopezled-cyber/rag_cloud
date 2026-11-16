@@ -262,6 +262,12 @@ def add_box(slide, x, y, w, h, fill=(255, 255, 255), line=(205, 216, 228)):
     return shape
 
 
+def add_metric_card(slide, x, y, w, h, number, label, accent=(26, 115, 232)):
+    add_box(slide, x, y, w, h, (247, 250, 253), (205, 216, 228))
+    add_text(slide, x + .08, y + .08, w - .16, .35, number, 18, True, accent, PP_ALIGN.CENTER)
+    add_text(slide, x + .08, y + .48, w - .16, .28, label, 7.5, True, (55, 65, 81), PP_ALIGN.CENTER)
+
+
 def build_poster(config, last_result):
     prs = Presentation()
     prs.slide_width = Inches(16.54)
@@ -269,137 +275,104 @@ def build_poster(config, last_result):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     slide.background.fill.solid()
     slide.background.fill.fore_color.rgb = RGBColor(241, 246, 250)
-    navy = (14, 39, 66)
-    blue = (26, 115, 232)
-    white = (255, 255, 255)
-    dark = (34, 45, 57)
+    navy = (14, 39, 66); blue = (26, 115, 232); cyan = (0, 153, 188)
+    green = (25, 135, 84); amber = (221, 126, 15); white = (255, 255, 255); dark = (34, 45, 57)
 
-    header = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, prs.slide_width, Inches(1.05))
-    header.fill.solid()
-    header.fill.fore_color.rgb = RGBColor(*navy)
-    header.line.color.rgb = RGBColor(*navy)
-    add_text(slide, .4, .14, 12, .42, config["title"], 24, True, white)
-    add_text(slide, .42, .61, 12, .26, "Integrantes: " + config["members"], 10, False, white)
+    header = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, prs.slide_width, Inches(1.02))
+    header.fill.solid(); header.fill.fore_color.rgb = RGBColor(*navy); header.line.color.rgb = RGBColor(*navy)
+    add_text(slide, .38, .10, 12.7, .41, config['title'], 23, True, white)
+    add_text(slide, .40, .57, 12.8, .24, 'Autor: ' + config['members'] + ' | Especialización en Inteligencia Artificial - CUN', 9.3, False, white)
+    add_text(slide, 13.35, .22, 2.75, .42, 'ACA 1 + ACA 2', 13, True, (145, 205, 255), PP_ALIGN.CENTER)
 
-    sections = [
-        (.35, 1.3, 4.05, 1.35, "SITUACIÓN PROBLEMA", config["problem"]),
-        (.35, 2.82, 4.05, 1.35, "OBJETIVO GENERAL", config["objective"]),
-        (.35, 4.34, 4.05, .95, "PILAR SELECCIONADO", config["pillar"]),
-        (.35, 5.46, 4.05, 2.25, "CONCLUSIONES", config["conclusions"]),
+    # Left column: problem, objective and methodology.
+    left_sections = [
+        (1.22, 1.48, 'SITUACIÓN PROBLEMA', config['problem']),
+        (2.86, 1.42, 'OBJETIVO GENERAL', config['objective']),
+        (4.44, 1.62, 'METODOLOGÍA', config['methodology']),
+        (6.22, 1.22, 'CORPUS Y PREPARACIÓN', config['corpus']),
     ]
-    for x, y, w, h, t, b in sections:
-        add_box(slide, x, y, w, h)
-        add_text(slide, x + .16, y + .1, w - .32, .28, t, 11, True, blue)
-        add_text(slide, x + .16, y + .43, w - .32, h - .5, b, 9, False, dark)
+    for y, h, title, body in left_sections:
+        add_box(slide, .34, y, 4.02, h)
+        add_text(slide, .50, y + .10, 3.70, .25, title, 10.5, True, blue)
+        add_text(slide, .50, y + .40, 3.70, h - .48, body, 8.15, False, dark)
 
-    add_box(slide, 4.62, 1.3, 7.1, 4.0)
-    add_text(slide, 4.8, 1.43, 6.75, .3, "ARQUITECTURA RAG COMPLETA", 13, True, blue, PP_ALIGN.CENTER)
-    labels = [
-        "Pregunta",
-        "Query Rewriting\nGemini 3.5",
-        "MiniLM\nEmbeddings",
-        "Qdrant Cloud",
-        "Top-k + umbral",
-        "Gemini 3.5\nRespuesta",
-        "Streamlit\nUI + fuentes",
-    ]
-    xs = [4.85, 5.8, 6.8, 7.8, 8.82, 9.86, 10.87]
-    for i, (label, x) in enumerate(zip(labels, xs)):
-        add_box(slide, x, 2.15, .78, 2.1, blue, blue)
-        add_text(slide, x + .03, 2.35, .72, 1.55, label, 7.5, True, white, PP_ALIGN.CENTER)
-        if i < len(xs) - 1:
-            connector = slide.shapes.add_connector(
-                MSO_CONNECTOR.STRAIGHT, Inches(x + .78), Inches(3.2), Inches(xs[i + 1]), Inches(3.2)
-            )
-            connector.line.color.rgb = RGBColor(*navy)
+    # Center top: editable native architecture.
+    add_box(slide, 4.57, 1.22, 7.34, 3.16)
+    add_text(slide, 4.77, 1.34, 6.94, .28, 'ARQUITECTURA RAG Y TRAZABILIDAD', 12.5, True, blue, PP_ALIGN.CENTER)
+    labels = ['Documentos\nPDF', 'Limpieza +\nchunks', 'MiniLM\nembeddings', 'Qdrant\nCloud', 'Top-k +\numbral', 'Gemini API\ncontexto', 'Respuesta +\nfuentes']
+    xs = [4.78, 5.77, 6.76, 7.75, 8.74, 9.73, 10.72]
+    colors=[navy, cyan, blue, navy, green, amber, blue]
+    for i,(label,x,color) in enumerate(zip(labels,xs,colors)):
+        add_box(slide, x, 1.92, .82, 1.46, color, color)
+        add_text(slide, x+.04, 2.16, .74, .88, label, 7.4, True, white, PP_ALIGN.CENTER)
+        if i < len(xs)-1:
+            con=slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x+.82), Inches(2.66), Inches(xs[i+1]), Inches(2.66))
+            con.line.color.rgb=RGBColor(*navy); con.line.width=Pt(1.8)
+    add_text(slide, 4.91, 3.57, 6.65, .45, 'Cada fragmento conserva documento, página, chunk_id y score. El LLM recibe únicamente el contexto recuperado, no el corpus completo.', 8.3, False, dark, PP_ALIGN.CENTER)
 
-    add_text(
-        slide,
-        4.9,
-        4.55,
-        6.5,
-        .42,
-        "Documentos → chunks → MiniLM → Qdrant | Consulta → recuperación → contexto → Gemini → UI",
-        8.5,
-        False,
-        dark,
-        PP_ALIGN.CENTER,
-    )
-    add_box(slide, 4.62, 5.46, 7.1, 3.25)
-    add_text(slide, 4.8, 5.58, 6.75, .3, "CAPTURAS REALES DE STREAMLIT", 12, True, blue, PP_ALIGN.CENTER)
-    for i, (path, label) in enumerate([(config["shot1"], "Consulta"), (config["shot2"], "Respuesta + fuentes")]):
-        x = 4.9 + i * 3.45
-        if path is not None:
-            slide.shapes.add_picture(path, Inches(x), Inches(6.05), Inches(3.05), Inches(2.2))
-        else:
-            add_box(slide, x, 6.05, 3.05, 2.2, (235, 239, 244), (170, 185, 200))
-            add_text(slide, x + .2, 6.85, 2.65, .45, "Captura real pendiente", 10, True, (100, 116, 139), PP_ALIGN.CENTER)
-        add_text(slide, x, 8.3, 3.05, .22, label, 8, True, navy, PP_ALIGN.CENTER)
+    # Center middle: data cards.
+    add_text(slide, 4.72, 4.55, 7.02, .27, 'CONFIGURACIÓN Y DATOS DEL EXPERIMENTO', 11.5, True, blue, PP_ALIGN.CENTER)
+    metrics=[('255','vectores en Qdrant'),('3','documentos PDF'),('Top-5','recuperación'),('0,45','score mínimo'),('1000','caracteres/chunk'),('150','solapamiento')]
+    for i,(num,label) in enumerate(metrics):
+        row=i//3; col=i%3
+        add_metric_card(slide, 4.67+col*2.39, 4.91+row*.95, 2.18, .82, num, label, [blue,cyan,green,amber,blue,cyan][i])
 
-    add_box(slide, 11.95, 1.3, 4.2, 5.0)
-    add_text(slide, 12.12, 1.45, 3.85, .3, "EJEMPLO DE INTERACCIÓN", 12, True, blue)
-    if last_result:
-        answer_text = last_result["answer"][:800]
-        sources = "\n".join(
-            f'• {h.get("filename")}, p. {h.get("page")}, score {h["score"]:.3f}'
-            for h in last_result["hits"][:3]
-        )
-        question = last_result.get("question", "")
+    # Center lower: results and evaluation.
+    add_box(slide, 4.57, 6.92, 3.55, 2.38)
+    add_text(slide, 4.75, 7.05, 3.20, .27, 'RESULTADOS DE RECUPERACIÓN', 10.5, True, blue, PP_ALIGN.CENTER)
+    retrieval = ('Consulta de homologación, Top-5:\n'
+                 '1. 0,703 | Reglamento estudiantil, p.11\n'
+                 '2. 0,697 | Reglamento de bienestar, p.24\n'
+                 '3. 0,693 | Reglamento estudiantil, p.15\n'
+                 '4. 0,686 | Reglamento estudiantil, p.14\n'
+                 '5. 0,681 | Reglamento estudiantil, p.11')
+    add_text(slide, 4.78, 7.43, 3.13, 1.53, retrieval, 7.7, False, dark)
+
+    add_box(slide, 8.35, 6.92, 3.56, 2.38)
+    add_text(slide, 8.53, 7.05, 3.20, .27, 'QUERY REWRITING Y EVALUACIÓN', 10.5, True, blue, PP_ALIGN.CENTER)
+    eval_text=('“tutorías”: Top-1 0,608 → 0,749\nMejora observada: +0,141 puntos (~23 %).\n\n'
+               'Batería: 6 casos (directos, multi-contexto, fuera del corpus y seguridad).\n'
+               'Nota: las métricas de latencia del respaldo son simuladas por cuota 429 y no equivalen a un benchmark real.')
+    add_text(slide, 8.57, 7.43, 3.12, 1.58, eval_text, 7.7, False, dark)
+
+    # Right column: controls, evidence and conclusions.
+    add_box(slide, 12.12, 1.22, 4.08, 2.30)
+    add_text(slide, 12.30, 1.35, 3.72, .27, 'CONTROLES DE FIDELIDAD Y SEGURIDAD', 10.5, True, blue, PP_ALIGN.CENTER)
+    controls=('• Recuperación antes de generación.\n• Filtro MIN_SCORE = 0,45.\n• Abstención cuando el contexto es insuficiente.\n• Citas con documento y página.\n• Secrets fuera del notebook y GitHub.\n• Revisión humana frente a la fuente original.')
+    add_text(slide, 12.32, 1.77, 3.68, 1.49, controls, 8.1, False, dark)
+
+    add_box(slide, 12.12, 3.72, 4.08, 2.62)
+    add_text(slide, 12.30, 3.85, 3.72, .27, 'EVIDENCIA DE STREAMLIT', 10.5, True, blue, PP_ALIGN.CENTER)
+    if config['shot1'] is not None:
+        slide.shapes.add_picture(config['shot1'], Inches(12.35), Inches(4.27), Inches(1.65), Inches(1.40))
     else:
-        question = "Ejecute una consulta en Chat RAG antes de generar el póster."
-        answer_text = "Respuesta real pendiente."
-        sources = "Fuentes reales pendientes."
-    add_text(slide, 12.12, 1.92, 3.85, .65, "Pregunta:\n" + question, 9, True, navy)
-    add_text(slide, 12.12, 2.72, 3.85, 1.72, "Respuesta:\n" + answer_text, 8.5, False, dark)
-    add_text(slide, 12.12, 4.56, 3.85, 1.4, "Citas:\n" + sources, 8, False, dark)
+        add_box(slide, 12.35, 4.27, 1.65, 1.40, (235,239,244), (170,185,200)); add_text(slide, 12.47, 4.80, 1.4, .28, 'Consulta\npendiente', 8, True, (100,116,139), PP_ALIGN.CENTER)
+    if config['shot2'] is not None:
+        slide.shapes.add_picture(config['shot2'], Inches(14.25), Inches(4.27), Inches(1.65), Inches(1.40))
+    else:
+        add_box(slide, 14.25, 4.27, 1.65, 1.40, (235,239,244), (170,185,200)); add_text(slide, 14.37, 4.80, 1.4, .28, 'Fuentes\npendientes', 8, True, (100,116,139), PP_ALIGN.CENTER)
+    add_text(slide, 12.36, 5.80, 3.55, .27, 'La interfaz permite inspeccionar fragmentos y metadatos recuperados.', 7.7, False, dark, PP_ALIGN.CENTER)
 
-    add_box(slide, 11.95, 6.48, 4.2, 2.23)
-    add_text(slide, 12.12, 6.62, 3.85, .28, "ENLACES FUNCIONALES", 12, True, blue, PP_ALIGN.CENTER)
-    for i, (label, url) in enumerate([("GitHub", config["github"]), ("App", config["app_url"]), ("Video", config["video"])]):
-        x = 12.18 + i * 1.42
+    add_box(slide, 12.12, 6.55, 4.08, 2.75)
+    add_text(slide, 12.30, 6.68, 3.72, .27, 'CONCLUSIONES Y LIMITACIONES', 10.5, True, blue, PP_ALIGN.CENTER)
+    add_text(slide, 12.32, 7.08, 3.68, 1.86, config['conclusions'] + '\n\nLimitaciones: ' + config['limitations'], 7.65, False, dark)
+
+    # Footer with links and concise technology trace.
+    footer=slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(.34), Inches(9.58), Inches(15.86), Inches(1.60))
+    footer.fill.solid(); footer.fill.fore_color.rgb=RGBColor(*navy); footer.line.color.rgb=RGBColor(*navy)
+    add_text(slide, .56, 9.76, 10.7, .35, 'TRAZABILIDAD: documento • página • chunk_id • score | Corpus autorizado | Secrets protegidos', 9.3, True, white, PP_ALIGN.CENTER)
+    add_text(slide, .56, 10.26, 10.7, .43, 'MiniLM multilingüe | Qdrant Cloud | Gemini API | Streamlit | Python', 8.7, False, white, PP_ALIGN.CENTER)
+    for i,(label,url) in enumerate([('GitHub',config['github']),('App',config['app_url']),('Video',config['video'])]):
+        x=11.52+i*1.47
         if url:
-            qr = qrcode.make(url)
-            bio = io.BytesIO()
-            qr.save(bio, format="PNG")
-            bio.seek(0)
-            slide.shapes.add_picture(bio, Inches(x), Inches(7.05), Inches(.75), Inches(.75))
+            qr=qrcode.make(url); bio=io.BytesIO(); qr.save(bio,format='PNG'); bio.seek(0)
+            slide.shapes.add_picture(bio, Inches(x), Inches(9.77), Inches(.73), Inches(.73))
         else:
-            add_box(slide, x, 7.05, .75, .75, (235, 239, 244), (180, 190, 200))
-            add_text(slide, x, 7.25, .75, .22, "PEND.", 7, True, (100, 116, 139), PP_ALIGN.CENTER)
-        add_text(slide, x - .1, 7.84, .95, .2, label, 8, True, navy, PP_ALIGN.CENTER)
+            add_box(slide,x,9.77,.73,.73,(235,239,244),(180,190,200)); add_text(slide,x,10.02,.73,.2,'PEND.',6.5,True,(100,116,139),PP_ALIGN.CENTER)
+        add_text(slide, x-.08, 10.55, .90, .20, label, 7.4, True, white, PP_ALIGN.CENTER)
 
-    footer = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(.35), Inches(9.05), Inches(15.8), Inches(1.9))
-    footer.fill.solid()
-    footer.fill.fore_color.rgb = RGBColor(*navy)
-    footer.line.color.rgb = RGBColor(*navy)
-    add_text(
-        slide,
-        .58,
-        9.3,
-        15.3,
-        .34,
-        "TRAZABILIDAD: documento • página • chunk_id • score | Secrets fuera de GitHub | datos_aca incluido",
-        10,
-        True,
-        white,
-        PP_ALIGN.CENTER,
-    )
-    add_text(
-        slide,
-        .58,
-        9.82,
-        15.3,
-        .6,
-        "Colección aca_documentos_academicos | MiniLM multilingual | Qdrant Cloud | Gemini 3.5 Flash | Streamlit",
-        9,
-        False,
-        white,
-        PP_ALIGN.CENTER,
-    )
-    output = io.BytesIO()
-    prs.save(output)
-    output.seek(0)
-    return output.getvalue()
+    # Speaker note equivalent is intentionally omitted; this is a one-slide poster.
+    output=io.BytesIO(); prs.save(output); output.seek(0); return output.getvalue()
 
 
 points = ensure_collection()
@@ -431,18 +404,30 @@ with chat_tab:
                 st.code(f'chunk_id={hit.get("chunk_id")}')
 
 with poster_tab:
-    st.subheader("Generar póster académico editable")
+    st.subheader("Generar póster académico ampliado y editable")
     c1, c2 = st.columns(2)
     with c1:
         title = st.text_input("Título", "ASISTENTE ACADÉMICO RAG EN LA NUBE")
         members = st.text_input("Integrantes", "Diego Fernando López Ledezma")
         problem = st.text_area(
             "Situación problema",
-            "La consulta manual de reglamentos dispersa información y dificulta entregar respuestas verificables.",
+            "La consulta manual de reglamentos académicos y documentos de bienestar distribuye la información entre distintas fuentes, exige localizar e interpretar múltiples secciones y dificulta verificar el origen de cada respuesta. El asistente RAG recupera evidencia institucional antes de generar y permite mostrar documento, página, fragmento y score.",
+            height=150,
         )
         objective = st.text_area(
             "Objetivo general",
-            "Desarrollar un asistente académico RAG con Qdrant Cloud y Gemini para producir respuestas trazables.",
+            "Desarrollar y evaluar un asistente académico en la nube basado en RAG que reutilice la base vectorial del ACA 1 e integre recuperación semántica, Qdrant Cloud, Gemini y Streamlit para generar respuestas fundamentadas, trazables y con mecanismos de abstención.",
+            height=140,
+        )
+        methodology = st.text_area(
+            "Metodología",
+            "Se aplicó un flujo preparar → recuperar → generar → evaluar → presentar. Los documentos se limpiaron, dividieron en chunks, representaron con MiniLM e indexaron en Qdrant. Cada consulta utiliza Top-k, umbral mínimo y generación restringida al contexto recuperado.",
+            height=140,
+        )
+        corpus = st.text_area(
+            "Corpus y preparación",
+            "Corpus: reglamento estudiantil, reglamento de bienestar y política de bienestar CUN. Se verificaron duplicados mediante SHA-256. Configuración experimental: 255 vectores, chunks de 1.000 caracteres y solapamiento de 150.",
+            height=120,
         )
         pillar = st.text_input("Pilar seleccionado", "Innovación educativa apoyada en IA y cloud")
         conclusions = st.text_area(
@@ -460,8 +445,11 @@ with poster_tab:
         "members": members,
         "problem": problem,
         "objective": objective,
+        "methodology": methodology,
+        "corpus": corpus,
         "pillar": pillar,
         "conclusions": conclusions,
+        "limitations": limitations,
         "github": github,
         "app_url": app_url,
         "video": video,

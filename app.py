@@ -145,7 +145,13 @@ def ensure_collection():
 
 
 def generate_text(prompt, temperature=0.1, max_tokens=800):
-    modelos = list(dict.fromkeys([GEMINI_MODEL, "gemini-3.5-flash", "gemini-1.5-flash"]))
+    modelos = list(dict.fromkeys([
+        GEMINI_MODEL,
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+    ]))
     ultimo_error = None
     for modelo in modelos:
         try:
@@ -160,10 +166,11 @@ def generate_text(prompt, temperature=0.1, max_tokens=800):
                 return response.text.strip()
         except Exception as e:
             ultimo_error = e
-            if any(code in str(e) for code in ["404", "NOT_FOUND", "503", "UNAVAILABLE"]):
+            err_str = str(e)
+            if any(code in err_str for code in ["404", "NOT_FOUND", "503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]):
                 continue
             raise e
-    raise RuntimeError(f"No se pudo generar respuesta: {ultimo_error}")
+    raise RuntimeError(f"Ningún modelo de Gemini pudo responder. Último error: {ultimo_error}")
 
 
 def rewrite_query(query):
@@ -176,7 +183,6 @@ def rewrite_query(query):
             max_tokens=200,
         )
     except Exception:
-        # Si falla por cuota (429), devuelve la consulta original sin interrumpir la búsqueda
         return query
 
 
@@ -217,16 +223,13 @@ def answer(query, k, threshold, use_rewriting=True):
     try:
         response = generate_text(prompt)
     except Exception as e:
-        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-            top = hits[0]
-            response = (
-                f"⚠️ **Aviso de cuota API (Error 429):** Se alcanzó el límite diario gratuito de Gemini. "
-                f"Sin embargo, la recuperación semántica en Qdrant encontró evidencia relevante en "
-                f"**[{top.get('filename')}, p. {top.get('page')}]** (score: {top['score']:.4f}):\n\n"
-                f"> {top.get('text', '')}"
-            )
-        else:
-            raise e
+        top = hits[0]
+        response = (
+            f"⚠️ **Aviso del servicio generativo (Gemini API):** `{type(e).__name__}: {e}`\n\n"
+            f"La recuperación semántica en **Qdrant Cloud** funcionó correctamente y encontró evidencia en "
+            f"**[{top.get('filename')}, p. {top.get('page')}]** (score: `{top['score']:.4f}`):\n\n"
+            f"> {top.get('text', '')}"
+        )
     return {
         "answer": response,
         "hits": hits,
@@ -447,9 +450,9 @@ with poster_tab:
             "• RAG separa recuperación y generación.\n• Qdrant conserva vectores y metadatos.\n• Las citas mejoran la trazabilidad.",
         )
     with c2:
-        github = st.text_input("URL de GitHub")
-        app_url = st.text_input("URL de Streamlit")
-        video = st.text_input("URL del video")
+        github = st.text_input("URL de GitHub", "https://github.com/diegolopezled-cyber/rag_cloud.git")
+        app_url = st.text_input("URL de Streamlit", "")
+        video = st.text_input("URL del video", "https://drive.google.com/file/d/1-N9m7Ab9aLAH1q9xWeOcPYdGYT7kvA-l/view?usp=sharing")
         shot1 = st.file_uploader("Captura 1: consulta", type=["png", "jpg", "jpeg"])
         shot2 = st.file_uploader("Captura 2: respuesta y fuentes", type=["png", "jpg", "jpeg"])
     config = {
